@@ -64,6 +64,7 @@ const server = new ApolloServer({
     apiKey: process.env.ENGINE_API_KEY,
   },
   introspection: true,
+  playground: true,
 });
 
 server.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {

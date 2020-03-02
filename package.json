@@ -5,8 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "nodemon --exec ts-node src/index.ts",
-    "build": "rm -rf ./dist && rollup -c",
-    "postinstall": "npm run build"
+    "build": "rm -rf ./dist && rollup -c"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.0.2",
