@@ -6,10 +6,10 @@ if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
 }
 
-const serviceAccount = require('../service-account.json');
+const { FIREBASE_CREDENTIALS = '' } = process.env;
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.credential.cert(JSON.parse(FIREBASE_CREDENTIALS)),
 });
 
 type User = {
