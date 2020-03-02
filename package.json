@@ -4,7 +4,8 @@
   "private": true,
   "module": "dist/index.esm.js",
   "scripts": {
-    "start": "nodemon --exec ts-node src/index.ts"
+    "start": "nodemon --exec ts-node src/index.ts",
+    "build": "ts-node src/index.ts"
   },
   "devDependencies": {
     "@types/ws": "^7.2.2",
