@@ -15,7 +15,6 @@
     "prettier": "^1.19.1",
     "pretty-quick": "^2.0.1",
     "ts-node": "^8.6.2",
-    "tslib": "^1.11.1",
     "typescript": "^3.8.3"
   },
   "husky": {
