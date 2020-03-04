@@ -3,9 +3,6 @@ import { ApolloServer } from 'apollo-server-express';
 import dotenv from 'dotenv';
 import express from 'express';
 import schema from './schema';
-// import typeDefs from './schema';
-// import * as queries from './queries';
-// import * as mutations from './mutations';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
