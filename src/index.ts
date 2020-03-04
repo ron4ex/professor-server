@@ -1,6 +1,11 @@
-import * as admin from 'firebase-admin';
-import { ApolloServer, ApolloError, ValidationError, gql } from 'apollo-server';
-import * as dotenv from 'dotenv';
+import admin from 'firebase-admin';
+import { ApolloServer } from 'apollo-server-express';
+import dotenv from 'dotenv';
+import express from 'express';
+import schema from './schema';
+// import typeDefs from './schema';
+// import * as queries from './queries';
+// import * as mutations from './mutations';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -12,54 +17,8 @@ admin.initializeApp({
   credential: admin.credential.cert(JSON.parse(FIREBASE_CREDENTIALS)),
 });
 
-type User = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-};
-
-const typeDefs = gql`
-  type User {
-    id: ID!
-    firstName: String!
-    lastName: String
-    email: String!
-  }
-
-  type Query {
-    getUsers: [User]
-    getUserById(id: ID!): User
-  }
-`;
-
-const resolvers = {
-  Query: {
-    async getUsers() {
-      const users = await admin
-        .firestore()
-        .collection('users')
-        .get();
-      return users.docs.map(user => user.data()) as User[];
-    },
-    async getUserById(_: null, args: { id: string }) {
-      try {
-        const userDoc = await admin
-          .firestore()
-          .doc(`users/${args.id}`)
-          .get();
-        const user = userDoc.data() as User | undefined;
-        return user || new ValidationError('User ID not found');
-      } catch (error) {
-        throw new ApolloError(error);
-      }
-    },
-  },
-};
-
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
+const apolloServer = new ApolloServer({
+  schema,
   engine: {
     apiKey: process.env.ENGINE_API_KEY,
   },
@@ -67,6 +26,11 @@ const server = new ApolloServer({
   playground: true,
 });
 
-server.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`);
+const PORT = process.env.PORT || 4000;
+const app = express();
+apolloServer.applyMiddleware({ app });
+app.listen({ port: PORT }, () => {
+  console.log(
+    `🚀  Server ready at http://localhost:${PORT}${apolloServer.graphqlPath}`
+  );
 });
