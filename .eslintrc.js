@@ -9,8 +9,13 @@ module.exports = {
   },
   rules: {
     'no-shadow': 'warn',
-    // '@typescript-eslint/explicit-member-accessibility': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/naming-convention': [
+      'error',
+      { selector: 'typeLike', format: ['StrictPascalCase'], suffix: ['Type'] },
+    ],
+    // '@typescript-eslint/explicit-member-accessibility': 'off',
+    // '@typescript-eslint/generic-type-naming': 'warn',
     // '@typescript-eslint/indent': 'off',
     // '@typescript-eslint/no-explicit-any': 'off',
     // '@typescript-eslint/no-non-null-assertion': 'off',

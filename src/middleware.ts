@@ -1,4 +1,4 @@
-import { rule, shield } from 'graphql-shield';
+import { rule } from 'graphql-shield';
 import admin from 'firebase-admin';
 import { AuthenticationError } from 'apollo-server-express';
 
@@ -9,14 +9,4 @@ export const isAuthenticated = rule()(async (_, __, context) => {
   } catch (error) {
     throw new AuthenticationError('Failed to authorize');
   }
-});
-
-export const middlewareShield = shield({
-  Query: {
-    getUsers: isAuthenticated,
-    getUserById: isAuthenticated,
-  },
-  Mutation: {
-    createUser: isAuthenticated,
-  },
 });

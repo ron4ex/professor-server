@@ -1,40 +1,29 @@
-import {
-  gql,
-  ValidationError,
-  ApolloError,
-  makeExecutableSchema,
-} from 'apollo-server-express';
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
+import { gql, ValidationError, ApolloError } from 'apollo-server-express';
+import { isAuthenticated } from '../middleware';
 
-export type User = {
+export type UserType = {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
 };
 
-export type CreateUserInput = {
+export type RegisterUserInputType = {
   firstName: string;
   lastName: string;
   email: string;
 };
 
-async function createUser(_: null, userInput: CreateUserInput) {
-  const userRef = admin
-    .firestore()
-    .collection('users')
-    .doc();
-
-  userRef.set({ id: userRef.id, ...userInput });
-}
-
 async function getUserById(_: null, args: { id: string }) {
   try {
-    const userDoc = await admin
+    const docSnapshot = await admin
       .firestore()
       .doc(`users/${args.id}`)
       .get();
-    const user = userDoc.data() as User | undefined;
+
+    const user = docSnapshot.data() as UserType | undefined;
+
     return user || new ValidationError('User ID not found');
   } catch (error) {
     throw new ApolloError(error);
@@ -42,44 +31,71 @@ async function getUserById(_: null, args: { id: string }) {
 }
 
 async function getUsers() {
-  const users = await admin
+  const querySnapshot = await admin
     .firestore()
     .collection('users')
     .get();
-  return users.docs.map(user => user.data()) as User[];
+
+  return querySnapshot.docs.map(user => user.data()) as UserType[];
 }
 
-export default makeExecutableSchema({
-  typeDefs: gql`
-    type User {
-      id: ID!
-      firstName: String
-      lastName: String
-      email: String!
-    }
+// TODO: Collection strings as constants
 
-    input CreateUserInput {
-      firstName: String
-      lastName: String
-      email: String!
-    }
+async function registerUser(
+  _: null,
+  { input }: { input: RegisterUserInputType },
+) {
+  const docRef = admin
+    .firestore()
+    .collection('users')
+    .doc();
 
-    type Query {
-      getUsers: [User]
-      getUserById(id: ID!): User
-    }
+  try {
+    const userData = { id: docRef.id, ...input };
+    await docRef.set(userData);
+    return userData as UserType;
+  } catch (error) {
+    throw new ApolloError(error);
+  }
+}
 
-    type Mutation {
-      createUser(input: CreateUserInput!): User
-    }
-  `,
-  resolvers: {
-    Query: {
-      getUsers,
-      getUserById,
-    },
-    Mutation: {
-      createUser,
-    },
+export const resolvers = {
+  Query: {
+    getUsers,
+    getUserById,
   },
-});
+  Mutation: {
+    registerUser,
+  },
+};
+
+export const shield = {
+  Query: {
+    getUsers: isAuthenticated,
+    getUserById: isAuthenticated,
+  },
+};
+
+export const typeDef = gql`
+  type User {
+    id: ID!
+    firstName: String
+    lastName: String
+    email: String!
+  }
+
+  input RegisterUserInput {
+    firstName: String
+    lastName: String
+    email: String!
+  }
+
+  extend type Query {
+    getUsers: [User]
+    getUserById(id: ID!): User
+  }
+
+  extend type Mutation {
+    registerUser(input: RegisterUserInput!): User
+  }
+`;
