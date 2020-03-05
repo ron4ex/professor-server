@@ -5,11 +5,12 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "nodemon --exec ts-node src/index.ts",
-    "build": "rm -rf ./dist && npx tsc"
+    "build": "rm -rf ./dist && eslint '*/**/*.{js,ts,tsx}' && tsc"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^2.22.0",
+    "@typescript-eslint/parser": "^2.22.0",
     "eslint": "^6.8.0",
-    "eslint-plugin-react-app": "^6.2.1",
     "husky": "^4.2.3",
     "nodemon": "^2.0.2",
     "prettier": "^1.19.1",
@@ -28,6 +29,7 @@
     "express": "^4.17.1",
     "firebase-admin": "^8.9.2",
     "graphql": "^14.6.0",
-    "graphql-tag": "^2.10.3"
+    "graphql-middleware": "^4.0.2",
+    "graphql-shield": "^7.0.14"
   }
 }

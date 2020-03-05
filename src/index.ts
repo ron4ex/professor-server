@@ -3,6 +3,8 @@ import { ApolloServer } from 'apollo-server-express';
 import dotenv from 'dotenv';
 import express from 'express';
 import schema from './schema';
+import { applyMiddleware } from 'graphql-middleware';
+import { middlewareShield } from './middleware';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -15,10 +17,11 @@ admin.initializeApp({
 });
 
 const apolloServer = new ApolloServer({
-  schema,
+  schema: applyMiddleware(schema, middlewareShield),
   engine: {
     apiKey: process.env.ENGINE_API_KEY,
   },
+  context: ({ req, res }) => ({ req, res }),
   introspection: true,
   playground: true,
 });
@@ -28,6 +31,6 @@ const app = express();
 apolloServer.applyMiddleware({ app });
 app.listen({ port: PORT }, () => {
   console.log(
-    `🚀  Server ready at http://localhost:${PORT}${apolloServer.graphqlPath}`
+    `🚀  Server ready at http://localhost:${PORT}${apolloServer.graphqlPath}`,
   );
 });
