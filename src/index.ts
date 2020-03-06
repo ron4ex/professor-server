@@ -14,6 +14,10 @@ admin.initializeApp({
   credential: admin.credential.cert(JSON.parse(FIREBASE_CREDENTIALS)),
 });
 
+const PORT = process.env.PORT || 4000;
+const GRAPHQL_PATH = `/graphql`;
+const END_POINT = `http://localhost:${PORT}${GRAPHQL_PATH}`;
+
 const apolloServer = new ApolloServer({
   schema,
   context: ({ req, res }) => ({ req, res }),
@@ -22,11 +26,8 @@ const apolloServer = new ApolloServer({
   playground: true,
 });
 
-const PORT = process.env.PORT || 4000;
 const app = express();
-apolloServer.applyMiddleware({ app });
+apolloServer.applyMiddleware({ app, path: GRAPHQL_PATH });
 app.listen({ port: PORT }, () => {
-  console.log(
-    `🚀  Server ready at http://localhost:${PORT}${apolloServer.graphqlPath}`,
-  );
+  console.log(`🚀  Server ready at ${END_POINT}`);
 });

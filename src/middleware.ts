@@ -4,9 +4,11 @@ import { AuthenticationError } from 'apollo-server-express';
 
 export const isAuthenticated = rule()(async (_, __, context) => {
   try {
-    const decodedToken = await admin.auth().verifyIdToken(context.req.idToken);
+    const tokenWithBearer = context.req.headers.authorization || '';
+    const token = tokenWithBearer.split(' ')[1];
+    const decodedToken = await admin.auth().verifyIdToken(token);
     return Boolean(decodedToken.uid);
   } catch (error) {
-    throw new AuthenticationError('Failed to authorize');
+    return new AuthenticationError(error);
   }
 });

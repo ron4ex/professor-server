@@ -1,5 +1,5 @@
 import admin from 'firebase-admin';
-import { gql } from 'apollo-server-express';
+import { gql, ApolloError } from 'apollo-server-express';
 import { PossibleTaskType } from './PossibleTask';
 import { isAuthenticated } from '../middleware';
 
@@ -20,22 +20,26 @@ export type CreateIdeaInputType = {
 async function createIdea(
   _: null,
   { input }: { input: CreateIdeaInputType },
-): Promise<IdeaType> {
-  const docRef = admin
-    .firestore()
-    .collection('ideas')
-    .doc();
+): Promise<IdeaType | ApolloError> {
+  try {
+    const docRef = admin
+      .firestore()
+      .collection('ideas')
+      .doc();
 
-  const ideaData: IdeaType = {
-    id: docRef.id,
-    possibleTasks: [],
-    description: input.description,
-    name: input.name,
-  };
+    const ideaData: IdeaType = {
+      id: docRef.id,
+      possibleTasks: [],
+      description: input.description,
+      name: input.name,
+    };
 
-  await docRef.set(ideaData);
+    await docRef.set(ideaData);
 
-  return ideaData;
+    return ideaData;
+  } catch (error) {
+    return new ApolloError(error);
+  }
 }
 
 async function getIdeas(): Promise<IdeaType[]> {

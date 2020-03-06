@@ -35,6 +35,10 @@ const schema = makeExecutableSchema({
 
 const middlewareShield = shield(
   merge({}, userShield, ideaShield, possibleTaskShield),
+  {
+    fallbackError:
+      'Internal Server Error handled by Shield: This probably means you have an unhandled exception somewhere in your resolvers',
+  },
 );
 
 export default applyMiddleware(schema, middlewareShield);
