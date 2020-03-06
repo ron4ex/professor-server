@@ -16,10 +16,8 @@ admin.initializeApp({
 
 const apolloServer = new ApolloServer({
   schema,
-  engine: {
-    apiKey: process.env.ENGINE_API_KEY,
-  },
   context: ({ req, res }) => ({ req, res }),
+  engine: false,
   introspection: true,
   playground: true,
 });

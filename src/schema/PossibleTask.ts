@@ -1,7 +1,9 @@
 import admin from 'firebase-admin';
 import { gql } from 'apollo-server-express';
 import { isAuthenticated } from '../middleware';
+import { IdeaType } from './Idea';
 
+// Types
 export type PossibleTaskCategoryType =
   | 'TWITTER'
   | 'FORUM'
@@ -13,14 +15,17 @@ export type PossibleTaskType = {
   id: string;
   category: PossibleTaskCategoryType;
   link: URL;
+  ideaId: string;
 };
 
 export type CreatePossibleTaskInputType = {
   category: PossibleTaskCategoryType;
   link: URL;
+  ideaId: string;
 };
 
-async function getPossibleTasks() {
+// Resolvers
+async function getPossibleTasks(): Promise<PossibleTaskType[]> {
   const querySnapshot = await admin
     .firestore()
     .collection('possibleTasks')
@@ -32,13 +37,33 @@ async function getPossibleTasks() {
 async function createPossibleTask(
   _: null,
   { input }: { input: CreatePossibleTaskInputType },
-) {
+): Promise<PossibleTaskType> {
   const docRef = admin
     .firestore()
     .collection('possibleTasks')
     .doc();
 
-  await docRef.set({ id: docRef.id, ...input });
+  const possibleTaskData: PossibleTaskType = {
+    id: docRef.id,
+    category: input.category,
+    link: input.link,
+    ideaId: input.ideaId,
+  };
+
+  await docRef.set(possibleTaskData);
+
+  return possibleTaskData;
+}
+
+async function getPossibleTaskIdea(
+  possibleTask: PossibleTaskType,
+): Promise<IdeaType> {
+  const docSnapshot = await admin
+    .firestore()
+    .doc(`ideas/${possibleTask.ideaId}`)
+    .get();
+
+  return docSnapshot.data() as IdeaType;
 }
 
 export const resolvers = {
@@ -48,8 +73,12 @@ export const resolvers = {
   Mutation: {
     createPossibleTask,
   },
+  PossibleTask: {
+    idea: getPossibleTaskIdea,
+  },
 };
 
+// Shield
 export const shield = {
   Query: {
     getPossibleTasks: isAuthenticated,
@@ -57,16 +86,27 @@ export const shield = {
   Mutation: {
     createPossibleTask: isAuthenticated,
   },
+  PossibleTask: {
+    idea: isAuthenticated,
+  },
 };
 
-// TODO: GraphQL category as enum
-
+// TypeDef
 export const typeDef = gql`
+  enum PossibleTaskCategory {
+    TWITTER
+    FORUM
+    PODCAST
+    BLOG
+    VIDEO
+  }
+
   type PossibleTask {
     id: ID!
-    idea: Idea!
-    category: String!
+    category: PossibleTaskCategory!
     link: String
+    ideaId: ID!
+    idea: Idea!
   }
 
   extend type Query {
@@ -74,8 +114,9 @@ export const typeDef = gql`
   }
 
   input CreatePossibleTaskInput {
-    category: String!
-    link: String!
+    category: PossibleTaskCategory!
+    link: String
+    ideaId: ID!
   }
 
   extend type Mutation {

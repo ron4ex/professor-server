@@ -1,7 +1,9 @@
 import admin from 'firebase-admin';
 import { gql, ValidationError, ApolloError } from 'apollo-server-express';
 import { isAuthenticated } from '../middleware';
+import { not } from 'graphql-shield';
 
+// Types
 export type UserType = {
   id: string;
   firstName: string;
@@ -15,7 +17,11 @@ export type RegisterUserInputType = {
   email: string;
 };
 
-async function getUserById(_: null, args: { id: string }) {
+// Resolvers
+async function getUserById(
+  _: null,
+  args: { id: string },
+): Promise<UserType | ValidationError> {
   try {
     const docSnapshot = await admin
       .firestore()
@@ -30,7 +36,7 @@ async function getUserById(_: null, args: { id: string }) {
   }
 }
 
-async function getUsers() {
+async function getUsers(): Promise<UserType[]> {
   const querySnapshot = await admin
     .firestore()
     .collection('users')
@@ -39,24 +45,25 @@ async function getUsers() {
   return querySnapshot.docs.map(user => user.data()) as UserType[];
 }
 
-// TODO: Collection strings as constants
-
 async function registerUser(
   _: null,
   { input }: { input: RegisterUserInputType },
-) {
+): Promise<UserType> {
   const docRef = admin
     .firestore()
     .collection('users')
     .doc();
 
-  try {
-    const userData = { id: docRef.id, ...input };
-    await docRef.set(userData);
-    return userData as UserType;
-  } catch (error) {
-    throw new ApolloError(error);
-  }
+  const userData: UserType = {
+    id: docRef.id,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+  };
+
+  await docRef.set(userData);
+
+  return userData;
 }
 
 export const resolvers = {
@@ -69,13 +76,18 @@ export const resolvers = {
   },
 };
 
+// Shield
 export const shield = {
   Query: {
     getUsers: isAuthenticated,
     getUserById: isAuthenticated,
   },
+  Mutation: {
+    registerUser: not(isAuthenticated),
+  },
 };
 
+// TypeDef
 export const typeDef = gql`
   type User {
     id: ID!

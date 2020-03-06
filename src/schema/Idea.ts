@@ -3,11 +3,12 @@ import { gql } from 'apollo-server-express';
 import { PossibleTaskType } from './PossibleTask';
 import { isAuthenticated } from '../middleware';
 
+// Types
 export type IdeaType = {
   id: string;
   name: string;
   description: string;
-  tasks: PossibleTaskType[];
+  possibleTasks: PossibleTaskType[];
 };
 
 export type CreateIdeaInputType = {
@@ -15,22 +16,47 @@ export type CreateIdeaInputType = {
   description: string;
 };
 
-async function createIdea(_: null, { input }: { input: CreateIdeaInputType }) {
+// Resolvers
+async function createIdea(
+  _: null,
+  { input }: { input: CreateIdeaInputType },
+): Promise<IdeaType> {
   const docRef = admin
     .firestore()
     .collection('ideas')
     .doc();
 
-  await docRef.set({ id: docRef.id, ...input });
+  const ideaData: IdeaType = {
+    id: docRef.id,
+    possibleTasks: [],
+    description: input.description,
+    name: input.name,
+  };
+
+  await docRef.set(ideaData);
+
+  return ideaData;
 }
 
-async function getIdeas() {
+async function getIdeas(): Promise<IdeaType[]> {
   const querySnapshot = await admin
     .firestore()
     .collection('ideas')
     .get();
 
   return querySnapshot.docs.map(doc => doc.data()) as IdeaType[];
+}
+
+async function getIdeaPossibleTasks(
+  idea: IdeaType,
+): Promise<PossibleTaskType[]> {
+  const querySnapshot = await admin
+    .firestore()
+    .collection('possibleTasks')
+    .where('ideaId', '==', idea.id)
+    .get();
+
+  return querySnapshot.docs.map(doc => doc.data()) as PossibleTaskType[];
 }
 
 export const resolvers = {
@@ -40,8 +66,12 @@ export const resolvers = {
   Mutation: {
     createIdea,
   },
+  Idea: {
+    possibleTasks: getIdeaPossibleTasks,
+  },
 };
 
+// Shield
 export const shield = {
   Query: {
     getIdeas: isAuthenticated,
@@ -49,14 +79,18 @@ export const shield = {
   Mutation: {
     createIdea: isAuthenticated,
   },
+  Idea: {
+    possibleTasks: isAuthenticated,
+  },
 };
 
+// TypeDef
 export const typeDef = gql`
   type Idea {
     id: ID!
     name: String!
     description: String
-    tasks: [PossibleTask]
+    possibleTasks: [PossibleTask]
   }
 
   extend type Query {
